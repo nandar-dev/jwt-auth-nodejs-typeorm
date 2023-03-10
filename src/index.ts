@@ -9,6 +9,7 @@ import { AuthDTO } from "./dto/response/auth.dto";
 import { UserDTO } from "./dto/response/user.dto";
 import { JWT } from "./security/jwt";
 import { LoginDTO } from "./dto/request/login.dto";
+import { EntityTODTO } from "./utils/enitityToDTO";
 
 AppDataSource.initialize()
   .then(async () => {
@@ -52,11 +53,7 @@ AppDataSource.initialize()
         await Database.userRepository.save(user);
 
         const authDto: AuthDTO = new AuthDTO();
-        const userDto: UserDTO = new UserDTO();
-        userDto.id = user.id;
-        userDto.username = user.username;
-        userDto.email = user.email;
-        userDto.age = user.age;
+        const userDto: UserDTO = EntityTODTO.userToDTO(user);
 
         const tokenAndRefreshToken = await JWT.generateTokenAndRefreshToken(
           user
@@ -86,10 +83,21 @@ AppDataSource.initialize()
         if (!user) throw new Error("User does not exist");
 
         // check if the password is valid
-        if (!PasswordHash.isPasswordValid(body.password, user.password))
+        if (!(await PasswordHash.isPasswordValid(body.password, user.password)))
           throw new Error("Password is invalid");
-          
+
+        // retrieve tokens
+        const { token, refreshToken } = await JWT.generateTokenAndRefreshToken(
+          user
+        );
+
         // generate an authenticationDto/response
+        const authDto = new AuthDTO();
+        authDto.user = EntityTODTO.userToDTO(user);
+        authDto.token = token;
+        authDto.refreshToken = refreshToken;
+
+        resp.json(authDto);
       } catch (error) {
         resp.status(500).json({
           message: error.message,
