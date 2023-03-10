@@ -17,7 +17,7 @@ export class JWT {
     };
 
     const jwtId = uuid4();
-    const token = jwt.sign( payload, this.JWT_SECRET,  {
+    const token = jwt.sign(payload, this.JWT_SECRET, {
       expiresIn: "1h", // specify when does the toekn expires ** 1 hour **
       jwtid: jwtId, // specify jwid (an id of that token) (needed for the refresh token, as a refresh token only points to one single unique token)
       subject: user.id.toString(), // the subject should be the ursers id (primary key)
@@ -49,5 +49,51 @@ export class JWT {
     await Database.refreshTokenRepository.save(refreshToken);
 
     return refreshToken.id;
+  }
+
+  public static isTokenValid(token: string) {
+    try {
+      if (
+        jwt.verify(token, this.JWT_SECRET, {
+          ignoreExpiration: false,
+        })
+      )
+        return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  public static getJwtId(token: string) {
+    const decodedToken = jwt.decode(token);
+    return decodedToken["jti"];
+  }
+
+  public static async isRefreshTokenLinkedToToken(
+    refreshToken: RefreshToken,
+    jwtId: string
+  ) {
+    if (!refreshToken) return false;
+
+    if (refreshToken.jwtId !== jwtId) return false;
+
+    return true;
+  }
+
+  public static async isRefreshTokenExpired(refreshToken: RefreshToken) {
+    if (moment().isAfter(refreshToken.expiryDate)) return true;
+
+    return false;
+  }
+
+  public static async isRefreshTokenUsedOrInvalidated(
+    refreshToken: RefreshToken
+  ) {
+    return refreshToken.used || refreshToken.invalidated;
+  }
+
+  public static getJwtPayloadValueByKey(token: string, key: string) {
+    const decodedToken = jwt.decode(token);    
+    return decodedToken[key];
   }
 }
