@@ -4,6 +4,9 @@ import * as express from "express";
 import { Request, Response } from "express";
 import { Database } from "./database";
 import { RegisterDTO } from "./dto/request/register.dto";
+import { PasswordHash } from "./security/passwordHash";
+import { AuthDTO } from "./dto/response/auth.dto";
+import { UserDTO } from "./dto/response/user.dto";
 
 AppDataSource.initialize()
   .then(async () => {
@@ -19,23 +22,17 @@ AppDataSource.initialize()
       res.send("Hello there");
     });
 
-    app.post("/register", (req: Request, resp: Response) => {
+    app.post("/register", async (req: Request, resp: Response) => {
       try {
         const body: RegisterDTO = req.body;
 
         // validate the body
         if (body.password !== body.repeatPassword)
           throw new Error("Repeat password does not match the password");
+
         // validate email
-        // let userManager = AppDataSource.manager.getRepository(User);
-         Database.userRepository.find().then((res)=>{
-            console.log("hreee", res);
-            
-        })
-      
-        
         if (
-          Database.userRepository.findOne({
+          await Database.userRepository.findOne({
             where: {
               email: body.email,
             },
@@ -47,6 +44,21 @@ AppDataSource.initialize()
         const user = new User();
         user.username = body.username;
         user.email = body.email;
+        user.password = await PasswordHash.hasPassword(body.password);
+        user.age = body.age;
+
+        await Database.userRepository.save(user);
+
+        const authDto: AuthDTO = new AuthDTO();
+        const userDto: UserDTO = new UserDTO();
+        userDto.id = user.id;
+        userDto.username = user.username;
+        userDto.email = user.email;
+        userDto.age = user.age;
+
+        authDto.user = userDto;
+
+        // implement token generation and refresh token
 
         resp.json({
           token: "dummy-token",
