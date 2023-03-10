@@ -1,5 +1,6 @@
 import { User } from "./src/entity/User";
-import { ConnectionOptions } from 'typeorm';
+import { RefreshToken } from "./src/entity/RefreshToken";
+import { ConnectionOptions } from "typeorm";
 
 export default {
   type: "postgres",
@@ -10,7 +11,7 @@ export default {
   database: "jwt_auth",
   synchronize: true,
   logging: false,
-  entities: [User],
+  entities: [User, RefreshToken],
   migrations: [],
   //   migrations: ["src/migration/*.{ts, ts}"],
   subscribers: [],

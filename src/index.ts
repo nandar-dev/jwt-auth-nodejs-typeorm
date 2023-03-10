@@ -7,6 +7,8 @@ import { RegisterDTO } from "./dto/request/register.dto";
 import { PasswordHash } from "./security/passwordHash";
 import { AuthDTO } from "./dto/response/auth.dto";
 import { UserDTO } from "./dto/response/user.dto";
+import { JWT } from "./security/jwt";
+import { LoginDTO } from "./dto/request/login.dto";
 
 AppDataSource.initialize()
   .then(async () => {
@@ -56,17 +58,38 @@ AppDataSource.initialize()
         userDto.email = user.email;
         userDto.age = user.age;
 
+        const tokenAndRefreshToken = await JWT.generateTokenAndRefreshToken(
+          user
+        );
         authDto.user = userDto;
+        authDto.token = tokenAndRefreshToken.token;
+        authDto.refreshToken = tokenAndRefreshToken.refreshToken;
 
         // implement token generation and refresh token
 
-        resp.json({
-          token: "dummy-token",
-          user: {
-            id: 1,
-            username: "dummy-username",
-          },
+        resp.json(authDto);
+      } catch (error) {
+        resp.status(500).json({
+          message: error.message,
         });
+      }
+    });
+
+    app.post("/login", async (req: Request, resp: Response) => {
+      try {
+        const body: LoginDTO = req.body;
+
+        // check if the email/user exists
+        const user = await Database.userRepository.findOne({
+          where: { email: body.email },
+        });
+        if (!user) throw new Error("User does not exist");
+
+        // check if the password is valid
+        if (!PasswordHash.isPasswordValid(body.password, user.password))
+          throw new Error("Password is invalid");
+          
+        // generate an authenticationDto/response
       } catch (error) {
         resp.status(500).json({
           message: error.message,
@@ -75,24 +98,3 @@ AppDataSource.initialize()
     });
   })
   .catch((error) => console.log(error));
-
-// import { AppDataSource } from "./data-source"
-// import { User } from "./entity/User"
-
-// AppDataSource.initialize().then(async () => {
-
-//     console.log("Inserting a new user into the database...")
-//     const user = new User()
-//     user.firstName = "Timber"
-//     user.lastName = "Saw"
-//     user.age = 25
-//     await AppDataSource.manager.save(user)
-//     console.log("Saved a new user with id: " + user.id)
-
-//     console.log("Loading users from the database...")
-//     const users = await AppDataSource.manager.find(User)
-//     console.log("Loaded users: ", users)
-
-//     console.log("Here you can setup and run express / fastify / any other framework.")
-
-// }).catch(error => console.log(error))
