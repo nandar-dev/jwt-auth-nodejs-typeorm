@@ -23,7 +23,7 @@
       "uuid": "^9.0.0"
    },
    "scripts": {
-      "start": "ts-node-dev src/index.ts",
+      "start": "ts-node src/index.ts",
       "typeorm": "typeorm-ts-node-commonjs"
    }
 }

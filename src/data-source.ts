@@ -5,11 +5,11 @@ import { RefreshToken } from "./entity/RefreshToken";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
-  host: "localhost",
+  host: "dpg-cgdd8t02qv2aq5ks9ksg-a",
   port: 5432,
-  username: "root",
-  password: "admin",
-  database: "jwt_auth",
+  username: "nanda",
+  password: "QJLO0LPFuPT9Pjf6wsQ65hTHCtRiKaL9",
+  database: "test_bkfk",
   synchronize: true,
   logging: false,
   entities: [User, RefreshToken],
